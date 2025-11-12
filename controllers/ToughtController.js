@@ -7,7 +7,25 @@ module.exports = class ToughtController {
     }
 
     static async dashboard(req, res){
-        res.render('toughts/dashboard')
+        const userid = req.session.userid
+
+        const user = await User.findOne({
+            where: {
+                id: userid,
+            },
+            include: Tought,
+            plain: true,
+        })
+
+        if(!user) {
+            res.redirect('/login')
+        }
+
+        const toughts = user.Toughts.map((result) => result.dataValues)
+
+        
+
+        res.render('toughts/dashboard', {toughts})
     }
 
     static createTought(req, res){
@@ -30,6 +48,23 @@ module.exports = class ToughtController {
             })            
         } catch (error){
             console.log('Aconteceu um grande erro:' + error)
+        }
+    }
+
+    static async removeTought(req, res) {
+        const id = req.body.id
+        const UserId = req.session.userid
+
+        try{
+            await Tought.destroy({where: {id: id, UserId: UserId}})
+
+            req.flash('message', 'Pensamento removido com sucesso')
+
+            req.session.save(() => {
+                res.redirect('/toughts/dashboard')
+            })            
+        } catch (error) {
+            console.log('Aconteceu um erro:' + error)
         }
     }
 }
